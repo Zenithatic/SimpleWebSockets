@@ -15,6 +15,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </h1>
   <p>This is a demo of the basic workings of SocketIO. Click <a href=https://github.com/Zenithatic/SimpleWebSockets target=_blank>here</a> to view source code.</p>
   <p id='info'>Your UserID is <strong>___</strong> and you are connected to room <strong>___</strong></p>
+  <p id='users'>Users in room: ___</p>    
   <div id='messages'>
     <div class='message'>You are not in a room.</div>
   </div>
@@ -37,30 +38,31 @@ const msgInput = document.querySelector<HTMLInputElement>('#message-input')
 const roomInput = document.querySelector<HTMLInputElement>('#room-input')
 const messages = document.querySelector<HTMLDivElement>('#messages')
 const userInfo = document.querySelector<HTMLParagraphElement>('#info')
+const usersInRoom = document.querySelector<HTMLParagraphElement>('#users')
 let userID = 'user_id'
 let currentRoom = '___'
 
 // Socket.IO work
-const socket = io('http://localhost:3000')
+
+while (true) {
+    const user = prompt('Enter your username:')
+
+    if (user == undefined || user == null) {
+        window.alert('Username cannot be empty.')
+    }
+    else if (user?.length == 0) {
+        window.alert('Username cannot be empty.')
+    }
+    else {
+        userID = user!
+        break
+    }
+}
+
+const socket = io('http://localhost:3000', { query: { userID: userID } })
 
 socket.on('connect', () => {
     console.log("Successfully connected to server.")
-
-    while (true) {
-        const user = prompt('Enter your username:')
-
-        if (user == undefined || user == null) {
-            window.alert('Username cannot be empty.')
-        }
-        else if (user?.length == 0) {
-            window.alert('Username cannot be empty.')
-        }
-        else {
-            userID = user!
-            break
-        }
-    }
-
     userInfo!.innerHTML = `Your UserID is <strong>${userID}</strong> and you are connected to room <strong>${currentRoom}</strong>`
 })
 
@@ -68,11 +70,15 @@ socket.on('message', (msg: Message) => {
     displayMessage(msg)
 })
 
+socket.on('user-join', (users: string[]) => {
+    updateUsers(users)
+})
+
 // Event listeners
 sendMsgButton!.addEventListener('click', (e: MouseEvent) => {
     e.preventDefault()
     const msg = msgInput!.value
-    socket.emit('message', { sender: userID, message: msg }, currentRoom)
+    socket.emit('message', msg, currentRoom)
 })
 
 joinRoomButton!.addEventListener('click', (e: MouseEvent) => {
@@ -108,6 +114,19 @@ function displayMessages(msgs: Message[]): void {
 // Function to clear all messages
 function clearMessages(): void {
     messages!.innerHTML = ''
+}
+
+// Function to update the list of users in the room
+function updateUsers(users: string[]): void {
+    let userString = ""
+    for (let i = 0; i < users.length; i++) {
+        userString += users[i]
+        if (i != users.length - 1) {
+            userString += ", "
+        }
+    }
+
+    usersInRoom!.innerHTML = `Users in room: ${userString}`
 }
 
 
