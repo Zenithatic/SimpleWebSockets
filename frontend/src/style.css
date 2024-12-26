@@ -138,6 +138,10 @@ button:focus-visible {
         color: black;
     }
 
+    input {
+        color: black;
+    }
+
     .message:nth-child(2n) {
         background-color: #dadada;
     }
